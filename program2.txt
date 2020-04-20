@@ -1,0 +1,344 @@
+"""
+Authors:
+Steven Coutts
+Molly DeCaro
+Rina Do
+"""
+import sys
+
+#sys.setrecursionlimit(2000)
+
+family = {}
+#famD = {}
+
+def addPerson1(p1, p2):  # E John Mary
+
+    if p1 not in family:
+
+        family[p1] = {"Spouse": [], "Parent": [], "Children": []}
+
+    if p2 not in family:
+
+        family[p2] = {"Spouse": [], "Parent": [], "Children": []}
+
+    if p2 not in family[p1]["Spouse"]:
+
+        family[p1]["Spouse"].append(p2)
+
+    if p1 not in family[p2]["Spouse"]:
+
+        family[p2]["Spouse"].append(p1)
+
+def addPerson2(p1, p2, p3):  # E John Mary Sandy
+
+    if p1 not in family:
+
+        family[p1] = {"Spouse": [], "Parent": [], "Children": []}
+
+    if p2 not in family:
+
+        family[p2] = {"Spouse": [], "Parent": [], "Children": []}
+
+    if p3 not in family:
+
+        family[p3] = {"Spouse": [], "Parent": [], "Children": []}
+
+    if p2 not in family[p1]["Spouse"]:
+
+        family[p1]["Spouse"].append(p2)
+
+    if p1 not in family[p2]["Spouse"]:
+
+        family[p2]["Spouse"].append(p1)
+
+    if p3 not in family[p1]["Children"]:
+
+        family[p1]["Children"].append(p3)
+
+    if p3 not in family[p2]["Children"]:
+
+        family[p2]["Children"].append(p3)
+
+    if p1 not in family[p3]["Parent"]:
+
+        family[p3]["Parent"].append(p1)
+
+    if p2 not in family[p3]["Parent"]:
+
+        family[p3]["Parent"].append(p2)
+
+def ancestor(person1, ancestorList):     # dictionary
+
+
+
+    if len(family[person1]["Parent"]) == 0:
+
+        return ancestorList
+
+    else:
+
+        for x in family[person1]["Parent"]:
+
+            ancestorList.append(x)
+
+            ancestor(x, ancestorList)
+
+
+
+    return ancestorList
+
+def descendant(person1, descList):
+
+    #descList = []
+
+    if len(family[person1]["Children"]) != 0:
+
+        for i in family[person1]["Children"]:
+
+            descList.append(i)
+
+            descendant(i, descList)
+
+    return descList
+
+def commonAncestor(person1, person2):
+    p1Ancestors = []
+    p1Ancestors.append(ancestor(person1, p1Ancestors))
+    p2Ancestors = []
+    p2Ancestors.append(ancestor(person2, p2Ancestors))
+    #commonAncestorPerson = ""
+    for x in p1Ancestors:
+        if x in p2Ancestors:
+            #print(x)
+            return(x)
+            #commonAncestorPerson = x
+            #break
+    return("")
+
+def getNthCousin(person1, n):
+    cousinList = []
+    for x in family:
+        if isNthCousin(person1, x, n):
+            cousinList.append(x)
+    for y in cousinList:
+        if family[y]["Parent"][0] == family[person1]["Parent"][0]:
+            cousinList.remove(y)
+    for y in cousinList:
+        if family[y]["Parent"][1] == family[person1]["Parent"][1]:
+            cousinList.remove(y)
+    for y in cousinList:
+        if y in family[person1]["Children"]:
+            cousinList.remove(y)
+    for y in cousinList:
+        if family[y]["Parent"][0] in family[person1]["Spouse"]:
+            cousinList.remove(y)
+    for y in cousinList:
+        if family[y]["Parent"][1] in family[person1]["Spouse"]:
+            cousinList.remove(y)
+    return cousinList
+
+#return dictionary of ancestors with distance from the input person
+
+def getAncestorswithDistance(person1, count, famD):
+    if person1 in family:
+        if len(family[person1]["Parent"]) > 0:
+            famD[family[person1]["Parent"][0]] = (count + 1)
+            famD[family[person1]["Parent"][1]] = (count + 1)
+            getAncestorswithDistance(family[person1]["Parent"][0], (count + 1), famD)
+            getAncestorswithDistance(family[person1]["Parent"][1], (count + 1), famD)
+    return famD
+
+#def isNthCousin(person1, person2, n):
+    commonA = commonAncestor(person1, person2)
+    if commonA != "":
+        p1Distance = {}
+        p2Distance = {}
+        p1Distance = getAncestorswithDistance(person1, 0, p1Distance)
+        p2Distance = getAncestorswithDistance(person2, 0, p2Distance)
+        distance = min(p1Distance[commonA], p2Distance[commonA])
+        if ((distance - 1) == n):
+           return("Yes")
+    return("No")
+
+def isNthCousin(person1, person2, n):
+    commonA = commonAncestor(person1, person2)
+    if commonA != "":
+        p1Distance = {}
+        p2Distance = {}
+        p1Distance = getAncestorswithDistance(person1, 0, p1Distance)
+        p2Distance = getAncestorswithDistance(person2, 0, p2Distance)
+        distance = min(p1Distance[commonA], p2Distance[commonA])
+        if ((distance - 1) == n):
+           return(True)
+    return(False)
+
+def isA(query): #Case X    X John parent Linda    OR      X John cousin 4 Linda
+    parts = query.split()
+
+    if (parts[2] == "child"):
+        ourPerson = parts[3]
+        if parts[1] in family[ourPerson]["Children"]:
+            return("Yes")
+        else:
+            return("No")
+
+    if (parts[2] == "sibling"):
+        ourPerson = parts[3]
+        if len(family[ourPerson]["Parent"]) == 0:
+            return("No")
+        p1 = family[ourPerson]["Parent"][0]
+        p2 = family[ourPerson]["Parent"][1]
+        if ourPerson == parts[1]:
+            return("No")
+        elif ourPerson in family[p1]["Children"]:
+            return("Yes")
+        elif ourPerson in family[p2]["Children"]:
+            return("Yes")
+        else:
+            return("No")
+
+    if (parts[2] == "ancestor"):
+        ourPerson = parts[3]
+        ancestorList = []
+        ancestorList = ancestor(ourPerson, ancestorList)
+        if parts[1] in ancestorList:
+            return("Yes")
+        else:
+            return("No")
+
+    if (parts[2] == "cousin"): # X Bob cousin 0 Sam
+        #ourPerson = parts[4]
+        degree = int(parts[3])
+        if isNthCousin(parts[1], parts[4], degree) == True:
+            return ("Yes")
+        else:
+            return("No")
+
+    if (parts[2] == "unrelated"):
+        ourPerson = parts[3]
+        relativeList = []
+        ancestorList = []
+        descList = []
+        ancList = ancestor(ourPerson, ancestorList)
+        relativeList = ancList
+        relativeList.extend(descendant(ourPerson, descList))
+        if parts[1] in relativeList:
+            return("No")
+        currCommon = []
+        currCommon = ancestor(parts[1], currCommon)
+        for y in currCommon:
+            if y in ancList:
+                return("No")
+        return("Yes")
+
+def whoA(query): #Case W; W cousin 4 John
+    parts = query.split()
+    if (parts[1] == "child"):
+        alphKids = []
+        ourPerson = parts[2]
+        for i in family[ourPerson]["Children"]:
+            alphKids.append(i)
+        return(sorted(alphKids))
+
+    if (parts[1] == "sibling"):
+        alphSibs = []
+        ourPerson = parts[2]
+        p1 = family[ourPerson]["Parent"][0]
+        p2 = family[ourPerson]["Parent"][1]
+        for i in family[p1]["Children"]:
+            if i != ourPerson and i not in alphSibs:
+                alphSibs.append(i)
+        for i in family[p2]["Children"]:
+            if i != ourPerson and i not in alphSibs:
+                alphSibs.append(i)
+        return(sorted(alphSibs))
+
+    if (parts[1] == "ancestor"):
+        ourPerson = parts[2]
+        ancList = []
+        ancList = ancestor(ourPerson, ancList)
+        return(sorted(ancList))
+
+    if (parts[1] == "cousin"):
+        ourPerson = parts[3]
+        degree = int(parts[2])
+        return(getNthCousin(ourPerson, degree))
+
+    if (parts[1] == "unrelated"):
+        ourPerson = parts[2]
+        relativeList = []
+        notRelated = []
+        ancList = []
+        descList = []
+        ancList = ancestor(ourPerson, ancList)
+        relativeList = ancList
+        relativeList.append(descendant(ourPerson, descList))
+
+        for x in family:
+            count = 0
+            currCommon = []
+            currCommon = ancestor(x, currCommon)
+            for y in currCommon:
+                if y in ancList:
+                    count = 1
+            if x not in relativeList and count == 0:
+                notRelated.append(x)
+        return(sorted(notRelated))
+
+#family is the dictionary of family
+
+def main():
+    '''
+    for line in sys.stdin:
+        print("line=",line.rstrip())
+        while line != 'end':
+            parts = line.rstrip().split() #incomplete
+            #print(parts[0])
+            #print(parts[1])
+            #print(parts[2])
+            #family[parts[1]]
+            if parts[0] == 'E':
+                if len(parts) == 3: #couple
+                    addPerson1(parts[1], parts[2])
+                elif len(parts) == 4: #couple w child
+                    addPerson2(parts[1], parts[2], parts[3])
+                else:
+                    print('Query is not valid')
+                    break
+            elif parts[0] == 'W':
+                print(whoA(query))
+            else:
+                print(isA(query))
+            '''
+
+    query = sys.stdin.readline().rstrip() #incomplete
+    while query:
+        parts = query.split() #incomplete
+        if parts[0] == 'E':
+            if len(parts) == 3: #couple
+                addPerson1(parts[1], parts[2])
+            elif len(parts) == 4: #couple w child
+                addPerson2(parts[1], parts[2], parts[3])
+            else:
+                print('Query is not valid')
+                break
+        elif parts[0] == 'W':
+            print(query)
+            print(whoA(query))
+        elif parts[0] == 'Z':
+            print(query)
+            print("Checking isNthCousin method.")
+            print(isNthCousin(parts[1], parts[2], 0))
+            print()
+        else: #X isA
+            print(query)
+            print(isA(query))
+        query = sys.stdin.readline().rstrip()
+
+        #print()
+
+
+
+if __name__ == "__main__":
+
+    main()
